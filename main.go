@@ -31,8 +31,9 @@ func Menu() {
 		fmt.Println("|---| REGISTRO DE PESO |---|")
 		fmt.Println("1. Registrar peso de hoy.")
 		fmt.Println("2. Ver ultimos registros.")
-		fmt.Println("3. Ver ultimos registros.")
-		fmt.Println("4. Salir.")
+		fmt.Println("3. Ver todos los registros.")
+		fmt.Println("4. Ver estadisticas totales.")
+		fmt.Println("5. Salir.")
 
 		var respuesta int
 		fmt.Println("Elegir opcion:")
@@ -47,6 +48,8 @@ func Menu() {
 		case 3:
 			mostrarUltimosRegistros("registro_de_peso.csv", -1)
 		case 4:
+			EstadisticasTotales("registro_de_peso.csv", -1)
+		case 5:
 			fmt.Println("Saliendo...")
 			option = false
 		}
@@ -121,4 +124,59 @@ func mostrarUltimosRegistros(filename string, n int) error {
 	}
 
 	return nil
+}
+
+func EstadisticasTotales(filename string, n int) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	registros, err := reader.ReadAll()
+	if err != nil {
+		return
+	}
+
+	// Verificar si hay datos (sin contar encabezado)
+	total := len(registros)
+	if total <= 1 {
+		fmt.Println("No hay suficientes registros para mostrar.")
+		return
+	}
+	if n == -1 || n > total-1 {
+		n = total - 1
+	}
+
+	// Determinar cuántos registros mostrar
+	inicio := max(total-n, 1)
+	var suma float32
+	var cantidad int // Para contar la cantidad de registros
+	ultimoRegistro := registros[total-1]
+	pesoFinal, err := strconv.ParseFloat(ultimoRegistro[1], 32)
+
+	for i, fila := range registros[inicio:] {
+		if i == 0 { // Evita división por cero
+			continue
+		}
+
+		peso, err := strconv.ParseFloat(fila[1], 32)
+		if err != nil {
+			fmt.Println("Error al convertir peso:", err)
+			continue
+		}
+
+		suma += float32(peso)
+		cantidad++ // Incrementa la cantidad de registros procesados
+	}
+
+	// Si hay registros procesados
+	if cantidad > 0 {
+		//promedioPeso := suma / float32(cantidad)
+		// Porcentaje de pérdida de peso
+		porcentajeBajado := ((float32(100) - float32(pesoFinal)) / float32(100)) * 100
+
+		fmt.Printf("Ha bajado %.2f%% de su peso inicial.\n", porcentajeBajado)
+	}
 }
