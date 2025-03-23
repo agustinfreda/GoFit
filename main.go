@@ -30,7 +30,9 @@ func Menu() {
 	for option {
 		fmt.Println("|---| REGISTRO DE PESO |---|")
 		fmt.Println("1. Registrar peso de hoy.")
-		fmt.Println("2. Salir.")
+		fmt.Println("2. Ver ultimos registros.")
+		fmt.Println("3. Ver ultimos registros.")
+		fmt.Println("4. Salir.")
 
 		var respuesta int
 		fmt.Println("Elegir opcion:")
@@ -41,6 +43,10 @@ func Menu() {
 			peso := PedirPeso()
 			registrarCSV("registro_de_peso.csv", peso)
 		case 2:
+			mostrarUltimosRegistros("registro_de_peso.csv", 7)
+		case 3:
+			mostrarUltimosRegistros("registro_de_peso.csv", -1)
+		case 4:
 			fmt.Println("Saliendo...")
 			option = false
 		}
@@ -77,6 +83,41 @@ func registrarCSV(filename string, peso float32) error {
 	peso_recibido := strconv.FormatFloat(float64(peso), 'f', -1, 32)
 	if err := writer.Write([]string{fecha, peso_recibido}); err != nil {
 		return fmt.Errorf("error al escribir en CSV: %v", err)
+	}
+
+	return nil
+}
+
+func mostrarUltimosRegistros(filename string, n int) error {
+	file, err := os.Open(filename)
+	if err != nil {
+		return fmt.Errorf("error al abrir el archivo CSV: %v", err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	registros, err := reader.ReadAll()
+	if err != nil {
+		return fmt.Errorf("error al leer el archivo CSV: %v", err)
+	}
+
+	// Verificar si hay datos (sin contar encabezado)
+	total := len(registros)
+	if total <= 1 {
+		fmt.Println("No hay suficientes registros para mostrar.")
+		return nil
+	}
+	if n == -1 || n > total-1 {
+		n = total - 1
+	}
+
+	// Determinar cuántos registros mostrar
+	inicio := max(total-n, 1)
+
+	// Imprimir los últimos `n` registros
+	fmt.Println("Últimos registros:")
+	for i, fila := range registros[inicio:] {
+		fmt.Printf("Semana %d: %v\n", i+1, fila)
 	}
 
 	return nil
